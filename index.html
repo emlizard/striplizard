@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Microstrip Line Calculator (W ↔ Z₀)</title>
+  <title>Stripline Calculator (W ↔ Z₀)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -22,7 +22,6 @@
       padding: 5px;
       width: 120px;
     }
-    /* 공통 입력값과 단면 이미지 영역을 좌우로 배치 */
     .common-flex {
       display: flex;
       gap: 20px;
@@ -41,7 +40,6 @@
       flex: 1;
       text-align: center;
     }
-    /* 계산 영역 좌우 배치 */
     .calc-container {
       display: flex;
       gap: 20px;
@@ -82,201 +80,126 @@
       margin: 0 auto;
     }
   </style>
-  <!-- Polyfill for Math.sinh (if needed) -->
-  <script>
-    if (!Math.sinh) {
-      Math.sinh = function(x) {
-        return (Math.exp(x) - Math.exp(-x)) / 2;
-      };
-    }
-  </script>
-  <!-- MathJax for displaying math formulas -->
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-  <h1>Microstrip Line Calculator (W ↔ Z₀)</h1>
-  
-  <!-- 공통 입력값과 단면 이미지 영역 -->
+  <h1>Stripline Calculator (W ↔ Z₀)</h1>
+
   <div class="common-flex">
     <div class="common-container">
-      <h2>공통 입력값</h2>
-      <div>
-        <!-- 기판 두께(b), 유전율(εᵣ), 도체 두께(t), 주파수(f) -->
-        <label for="common-b">기판 두께 (b) [mm]:</label>
-        <input type="number" id="common-b" step="any" value="2.0"><br>
-        <label for="common-eps">유전율 (εᵣ):</label>
-        <input type="number" id="common-eps" step="any" value="3.8"><br>
-        <label for="common-t">도체 두께 (t) [µm]:</label>
-        <input type="number" id="common-t" step="any" value="35"><br>
-        <label for="common-f">주파수 (f) [GHz]:</label>
-        <input type="number" id="common-f" step="any" value="1"><br>
-      </div>
+      <h2>Common Parameters</h2>
+      <label for="common-b">Substrate Height (b) [mm]:</label>
+      <input type="number" id="common-b" step="any" value="2.0"><br>
+      <label for="common-eps">Dielectric Constant (εᵣ):</label>
+      <input type="number" id="common-eps" step="any" value="3.8"><br>
+      <label for="common-t">Conductor Thickness (t) [µm]:</label>
+      <input type="number" id="common-t" step="any" value="35"><br>
+      <label for="common-f">Frequency (f) [GHz]:</label>
+      <input type="number" id="common-f" step="any" value="1"><br>
     </div>
     <div class="diagram-container">
-      <h2>단면 이미지</h2>
-      <img src="https://emlizard.github.io/main-page/images/diagram_Stripline.png" alt="Microstrip 단면도">
+      <h2>Cross Section Diagram</h2>
+      <img src="https://emlizard.github.io/main-page/images/diagram_Stripline.png" alt="Stripline diagram">
     </div>
   </div>
-  
-  <!-- 계산 영역: W 입력 → Z₀ 계산과 Z₀ 입력 → W 계산을 좌우로 배치 -->
+
   <div class="calc-container">
-    <!-- 왼쪽: W 입력 → Z₀ 계산 -->
     <div class="section">
-      <h2>W 입력 → Z₀ 계산</h2>
-      <label for="ms-W-input">시그널 라인 폭 W [mm]:</label>
-      <input type="number" id="ms-W-input" step="any" value="3"><br>
-      <button type="button" onclick="calculateZ0_fromW()">계산하기</button>
+      <h2>W to Z₀ Calculation</h2>
+      <label for="ms-W-input">Signal Line Width W [mm]:</label>
+      <input type="number" id="ms-W-input" step="any" value="1"><br>
+      <button onclick="calculateZ0_fromW()">Calculate</button>
     </div>
-    <!-- 오른쪽: Z₀ 입력 → W 계산 -->
     <div class="section">
-      <h2>Z₀ 입력 → W 계산</h2>
-      <label for="ms-Z0-input">목표 Z₀ [Ohm]:</label>
+      <h2>Z₀ to W Calculation</h2>
+      <label for="ms-Z0-input">Target Z₀ [Ohm]:</label>
       <input type="number" id="ms-Z0-input" step="any" value="50"><br>
-      <button type="button" onclick="calculateW_fromZ0()">계산하기</button>
+      <button onclick="calculateW_fromZ0()">Calculate</button>
     </div>
   </div>
-  
-  <!-- 결과 출력 영역 -->
+
   <div class="result-container">
-    <h2>계산 결과</h2>
-    <div id="resultArea" style="margin-top: 15px; font-weight: bold;"></div>
+    <h2>Calculation Result</h2>
+    <div id="resultArea"></div>
   </div>
-  
-  <!-- 사용 수식 영역 (선택 사항) -->
+
   <div class="formula">
-    <h2>사용 수식</h2>
+    <h2>Formulas Used</h2>
     <p>
-      <strong>유효 스트립 라인 폭 \(W_{\mathrm{eff}}\):</strong><br>
-      \[
-      W_{\mathrm{eff}} =
-      \begin{cases}
-      W, & t \le 0,\\[1mm]
-      W + \dfrac{t}{\pi}\ln\!\Bigl(1+\dfrac{4e\,h}{t}\Bigr), & t>0,
-      \end{cases}
-      \]
-      (입력: W와 b는 mm, t는 µm; 내부 계산 시 m 단위)
+      \[ W_{\mathrm{eff}} = W + \frac{t}{\pi} \ln\left(1 + \frac{4 e b}{t}\right) \]
     </p>
     <p>
-      <strong>유효 유전율 \(\epsilon_{\mathrm{eff}}\):</strong><br>
-      \[
-      \epsilon_{\mathrm{eff}} = \frac{\epsilon_r+1}{2} + \frac{\epsilon_r-1}{2}\frac{1}{\sqrt{1+12\frac{h}{W_{\mathrm{eff}}}}}
-      \]
+      \[ f_p = \frac{c}{4b\sqrt{\epsilon_r}}, \quad \epsilon_{\text{low}} = \epsilon_r - 0.2 \]
+      \[ \epsilon_{\text{eff}} = \epsilon_{\text{low}} + (\epsilon_r - \epsilon_{\text{low}}) (1 - e^{-f/f_p}) \]
     </p>
     <p>
-      <strong>특성 임피던스 \(Z_0\):</strong><br>
-      For \( \frac{W_{\mathrm{eff}}}{h} \le 1 \):<br>
-      \[
-      Z_0 = \frac{60}{\sqrt{\epsilon_{\mathrm{eff}}}} \ln\!\Bigl(\frac{8h}{W_{\mathrm{eff}}} + \frac{W_{\mathrm{eff}}}{4h}\Bigr)
-      \]
-      <br>
-      For \( \frac{W_{\mathrm{eff}}}{h} > 1 \):<br>
-      \[
-      Z_0 = \frac{120\pi}{\sqrt{\epsilon_{\mathrm{eff}}}\Bigl(\frac{W_{\mathrm{eff}}}{h} + 1.393 + 0.667\ln\!\Bigl(\frac{W_{\mathrm{eff}}}{h}+1.444\Bigr)\Bigr)}
-      \]
+      \[ Z_0 = \frac{30\pi}{\sqrt{\epsilon_{\text{eff}}}} \cdot \frac{1}{W_{\text{eff}}/b + 0.441} \]
     </p>
   </div>
-  
+
   <div class="references">
-    <h2>참고 문헌</h2>
-    <p>
-      <strong>Hammerstad &amp; Jensen (1980):</strong><br>
-      Accurate Models for Microstrip Computer-Aided Design. IEEE Transactions on Microwave Theory and Techniques, 28(2), 344–351.
-    </p>
-    <p>
-      <strong>Pozar, D. M. Microwave Engineering.</strong>
-    </p>
+    <h2>References</h2>
+    <p>H. A. Wheeler, Pozar: Microwave Engineering</p>
   </div>
-  
+
   <script>
-    // 상수
-    const pi = Math.PI;
-    const e_const = Math.E;
-    
-    // 공통 입력값 읽기: b (기판 두께, mm), eps_r, t (µm), f (GHz)
     function getCommonParams() {
-      let b_mm = parseFloat(document.getElementById("common-b").value);
-      let eps_r = parseFloat(document.getElementById("common-eps").value);
-      let t_um = parseFloat(document.getElementById("common-t").value);
-      let f_GHz = parseFloat(document.getElementById("common-f").value);
-      return {
-        h: b_mm / 1000,    // 여기서 b는 기판 두께 (m)
-        eps_r: eps_r,
-        t: t_um * 1e-6,    // m
-        f: f_GHz
-      };
+      const b = parseFloat(document.getElementById("common-b").value) / 1000;
+      const eps_r = parseFloat(document.getElementById("common-eps").value);
+      const t = parseFloat(document.getElementById("common-t").value) * 1e-6;
+      const f = parseFloat(document.getElementById("common-f").value);
+      return { b, eps_r, t, f };
     }
-    
-    // 마이크로스트립 라인의 특성 임피던스와 유효 유전율 계산 함수
-    // 입력: W (mm), 공통 파라미터: h, t, eps_r, f
-    function calcMicrostrip(W_mm, common) {
-      let h = common.h;          // m (기판 두께)
-      let eps_r = common.eps_r;
-      let t = common.t;          // m
-      let W = W_mm / 1000;       // m
-      
-      // 도체 두께 보정: 유효 중심 도체 폭 W_eff
-      let W_eff = (t <= 0) ? W : W + (t / pi) * Math.log(1 + (4 * e_const * h) / t);
-      
-      // 유효 유전율 계산 (Hammerstad & Jensen 모델)
-      let eps_eff = (eps_r + 1) / 2 + ((eps_r - 1) / 2) / Math.sqrt(1 + 12 * h / W_eff);
-      
-      // 특성 임피던스 계산: W_eff/h 비율에 따라 분기
-      let ratio = W_eff / h;
-      let Z0;
-      if (ratio <= 1) {
-        Z0 = (60 / Math.sqrt(eps_eff)) * Math.log((8 * h) / W_eff + (W_eff / (4 * h)));
-      } else {
-        Z0 = (120 * pi) / (Math.sqrt(eps_eff) * (ratio + 1.393 + 0.667 * Math.log(ratio + 1.444)));
-      }
-      
-      return { Z0: Z0, eps_eff: eps_eff, W_eff: W_eff };
+
+    function effectiveWidth(W, t, b) {
+      return W + (t / Math.PI) * Math.log(1 + (4 * Math.E * b) / t);
     }
-    
-    // 모드 1: W 입력 → Z₀ 계산
+
+    function effectiveEps(eps_r, b, f) {
+      const eps_low = eps_r - 0.2;
+      const fp = 3e8 / (4 * b * Math.sqrt(eps_r));
+      const fHz = f * 1e9;
+      return eps_low + (eps_r - eps_low) * (1 - Math.exp(-fHz / fp));
+    }
+
+    function calcZ0_strip(W_mm, params) {
+      const W = W_mm / 1000;
+      const W_eff = effectiveWidth(W, params.t, params.b);
+      const eps_eff = effectiveEps(params.eps_r, params.b, params.f);
+      const Z0 = (30 * Math.PI / Math.sqrt(eps_eff)) / (W_eff / params.b + 0.441);
+      return { Z0, eps_eff };
+    }
+
     function calculateZ0_fromW() {
-      let common = getCommonParams();
-      let W_mm = parseFloat(document.getElementById("ms-W-input").value);
-      let result = calcMicrostrip(W_mm, common);
+      const params = getCommonParams();
+      const W_mm = parseFloat(document.getElementById("ms-W-input").value);
+      const result = calcZ0_strip(W_mm, params);
       document.getElementById("resultArea").innerHTML =
-        "계산된 특성 임피던스 Z₀ = " + result.Z0.toFixed(2) + " Ohm<br>" +
-        "유효 유전율 ε_eff = " + result.eps_eff.toFixed(3);
+        `Calculated Characteristic Impedance Z₀ = ${result.Z0.toFixed(2)} Ohm<br>` +
+        `Effective Dielectric Constant ε_eff = ${result.eps_eff.toFixed(3)}`;
     }
-    
-    // 모드 2: Z₀ 입력 → W 계산 (Newton–Raphson)
-    function findW_for_Z0(targetZ0, common) {
-      let W_guess = 3; // mm 단위 초기 추정값
-      let tol = 1e-6;
-      let maxIter = 100;
-      for (let i = 0; i < maxIter; i++) {
-        let result = calcMicrostrip(W_guess, common);
-        let f_val = result.Z0 - targetZ0;
-        if (Math.abs(f_val) < tol) return W_guess;
-        let dW = 1e-6; // mm 단위 미세 변화
-        let Z0_plus = calcMicrostrip(W_guess + dW, common).Z0;
-        let Z0_minus = calcMicrostrip(W_guess - dW, common).Z0;
-        let derivative = (Z0_plus - Z0_minus) / (2 * dW);
-        if (Math.abs(derivative) < 1e-12) break;
-        let W_next = W_guess - f_val / derivative;
-        if (Math.abs(W_next - W_guess) < tol) return W_next;
-        W_guess = W_next;
-      }
-      return W_guess;
-    }
-    
+
     function calculateW_fromZ0() {
-      let common = getCommonParams();
-      let targetZ0 = parseFloat(document.getElementById("ms-Z0-input").value);
-      let W_calc = findW_for_Z0(targetZ0, common);
-      let result = calcMicrostrip(W_calc, common);
+      const params = getCommonParams();
+      const targetZ0 = parseFloat(document.getElementById("ms-Z0-input").value);
+      let W_guess = params.b * 1000;
+      let tol = 1e-6;
+      for (let i = 0; i < 100; i++) {
+        const res = calcZ0_strip(W_guess, params);
+        const f_val = res.Z0 - targetZ0;
+        if (Math.abs(f_val) < tol) break;
+        const dW = 1e-3;
+        const Zp = calcZ0_strip(W_guess + dW, params).Z0;
+        const Zm = calcZ0_strip(W_guess - dW, params).Z0;
+        const deriv = (Zp - Zm) / (2 * dW);
+        W_guess -= f_val / deriv;
+      }
+      const final = calcZ0_strip(W_guess, params);
       document.getElementById("resultArea").innerHTML =
-        "목표 Z₀ = " + targetZ0 + " Ohm 에 해당하는 시그널 라인 폭 W = " + W_calc.toFixed(4) + " mm<br>" +
-        "계산된 유효 유전율 ε_eff = " + result.eps_eff.toFixed(3);
+        `Target Z₀ = ${targetZ0} Ohm corresponds to W = ${W_guess.toFixed(4)} mm<br>` +
+        `Effective Dielectric Constant ε_eff = ${final.eps_eff.toFixed(3)}`;
     }
   </script>
-  
-  
 </body>
 </html>
