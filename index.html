@@ -90,7 +90,7 @@
     <div class="common-container">
       <h2>Common Parameters</h2>
       <label for="common-h">Substrate Height (h) [mm]:</label>
-      <input type="number" id="common-b" step="any" value="2.0"><br>
+      <input type="number" id="common-h" step="any" value="2.0"><br>
       <label for="common-eps">Dielectric Constant (εᵣ):</label>
       <input type="number" id="common-eps" step="any" value="3.8"><br>
       <label for="common-t">Conductor Thickness (t) [µm]:</label>
@@ -130,7 +130,7 @@
       \[ W_{\mathrm{eff}} = W + \frac{t}{\pi} \ln\left(1 + \frac{4 e h}{t}\right) \]
     </p>
     <p>
-      \[ f_p = \frac{c}{4b\sqrt{\epsilon_r}}, \quad \epsilon_{\text{low}} = \epsilon_r - 0.2 \]
+      \[ f_p = \frac{c}{4h\sqrt{\epsilon_r}}, \quad \epsilon_{\text{low}} = \epsilon_r - 0.2 \]
       \[ \epsilon_{\text{eff}} = \epsilon_{\text{low}} + (\epsilon_r - \epsilon_{\text{low}}) (1 - e^{-f/f_p}) \]
     </p>
     <p>
@@ -156,7 +156,7 @@
       return W + (t / Math.PI) * Math.log(1 + (4 * Math.E * h) / t);
     }
 
-    function effectiveEps(eps_r, b, f) {
+    function effectiveEps(eps_r, h, f) {
       const eps_low = eps_r - 0.2;
       const fp = 3e8 / (4 * h * Math.sqrt(eps_r));
       const fHz = f * 1e9;
