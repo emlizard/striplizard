@@ -89,7 +89,7 @@
   <div class="common-flex">
     <div class="common-container">
       <h2>Common Parameters</h2>
-      <label for="common-b">Substrate Height (b) [mm]:</label>
+      <label for="common-h">Substrate Height (h) [mm]:</label>
       <input type="number" id="common-b" step="any" value="2.0"><br>
       <label for="common-eps">Dielectric Constant (εᵣ):</label>
       <input type="number" id="common-eps" step="any" value="3.8"><br>
@@ -127,14 +127,14 @@
   <div class="formula">
     <h2>Formulas Used</h2>
     <p>
-      \[ W_{\mathrm{eff}} = W + \frac{t}{\pi} \ln\left(1 + \frac{4 e b}{t}\right) \]
+      \[ W_{\mathrm{eff}} = W + \frac{t}{\pi} \ln\left(1 + \frac{4 e h}{t}\right) \]
     </p>
     <p>
       \[ f_p = \frac{c}{4b\sqrt{\epsilon_r}}, \quad \epsilon_{\text{low}} = \epsilon_r - 0.2 \]
       \[ \epsilon_{\text{eff}} = \epsilon_{\text{low}} + (\epsilon_r - \epsilon_{\text{low}}) (1 - e^{-f/f_p}) \]
     </p>
     <p>
-      \[ Z_0 = \frac{30\pi}{\sqrt{\epsilon_{\text{eff}}}} \cdot \frac{1}{W_{\text{eff}}/b + 0.441} \]
+      \[ Z_0 = \frac{30\pi}{\sqrt{\epsilon_{\text{eff}}}} \cdot \frac{1}{W_{\text{eff}}/h + 0.441} \]
     </p>
   </div>
 
@@ -145,29 +145,29 @@
 
   <script>
     function getCommonParams() {
-      const b = parseFloat(document.getElementById("common-b").value) / 1000;
+      const h = parseFloat(document.getElementById("common-h").value) / 1000;
       const eps_r = parseFloat(document.getElementById("common-eps").value);
       const t = parseFloat(document.getElementById("common-t").value) * 1e-6;
       const f = parseFloat(document.getElementById("common-f").value);
-      return { b, eps_r, t, f };
+      return { h, eps_r, t, f };
     }
 
-    function effectiveWidth(W, t, b) {
-      return W + (t / Math.PI) * Math.log(1 + (4 * Math.E * b) / t);
+    function effectiveWidth(W, t, h) {
+      return W + (t / Math.PI) * Math.log(1 + (4 * Math.E * h) / t);
     }
 
     function effectiveEps(eps_r, b, f) {
       const eps_low = eps_r - 0.2;
-      const fp = 3e8 / (4 * b * Math.sqrt(eps_r));
+      const fp = 3e8 / (4 * h * Math.sqrt(eps_r));
       const fHz = f * 1e9;
       return eps_low + (eps_r - eps_low) * (1 - Math.exp(-fHz / fp));
     }
 
     function calcZ0_strip(W_mm, params) {
       const W = W_mm / 1000;
-      const W_eff = effectiveWidth(W, params.t, params.b);
-      const eps_eff = effectiveEps(params.eps_r, params.b, params.f);
-      const Z0 = (30 * Math.PI / Math.sqrt(eps_eff)) / (W_eff / params.b + 0.441);
+      const W_eff = effectiveWidth(W, params.t, params.h);
+      const eps_eff = effectiveEps(params.eps_r, params.h, params.f);
+      const Z0 = (30 * Math.PI / Math.sqrt(eps_eff)) / (W_eff / params.h + 0.441);
       return { Z0, eps_eff };
     }
 
@@ -183,7 +183,7 @@
     function calculateW_fromZ0() {
       const params = getCommonParams();
       const targetZ0 = parseFloat(document.getElementById("ms-Z0-input").value);
-      let W_guess = params.b * 1000;
+      let W_guess = params.h * 1000;
       let tol = 1e-6;
       for (let i = 0; i < 100; i++) {
         const res = calcZ0_strip(W_guess, params);
